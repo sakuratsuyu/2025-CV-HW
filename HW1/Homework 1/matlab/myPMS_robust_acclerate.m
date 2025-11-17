@@ -19,6 +19,9 @@ function [N, rho] = myPMS(data, m)
     [H, W] = size(data.mask);
     p = length(m);
 
+    dark_ratio = 0.2;
+    bright_ratio = 0.0;
+
     I = zeros(nImages, p, 3);
     for i = 1 : nImages
         img = double(imgs{i});
@@ -27,12 +30,32 @@ function [N, rho] = myPMS(data, m)
         I(i, :, :) = img(m, :) ./ intensities(i, :);
     end
 
-    %% Solve for normals and albedo using least squares
-    % For each pixel j:  I(:, j) = directions * g(:, j)
-    % g = rho * N  (albedo * normal)
-    gR = directions \ I(:, :, 1);
-    gG = directions \ I(:, :, 2);
-    gB = directions \ I(:, :, 3);
+    I_magnitude = sqrt(squeeze(sum(I .^ 2, 3)));  % n x p
+
+    [~, sorted_idx] = sort(I_magnitude, 1, 'ascend');
+
+    low_cut = ceil(dark_ratio * nImages) + 1;
+    high_cut = floor((1 - bright_ratio) * nImages);
+    kcount = high_cut - low_cut + 1;
+    W_mask = false(nImages, p);
+    rowsToFill = low_cut:high_cut; % length = kcount
+    for r = 1:kcount
+        idx_rows = sorted_idx(rowsToFill(r), :); % 1 × p, image indices to keep for each pixel
+        % linear indexing trick: set W(idx_rows(j), j) = true for all j
+        % We'll compute linear indices:
+        linIdx = idx_rows + (0:(p-1))*nImages; % 1×p vector of linear indices into W(:)
+        W_mask(linIdx) = true;
+    end
+
+    gR = zeros(3, p);
+    gG = zeros(3, p);
+    gB = zeros(3, p);
+    for j = 1 : p
+        mask = W_mask(:,j) ~= 0;
+        gR(:,j) = directions(mask, :) \ I(mask, j, 1);
+        gG(:,j) = directions(mask, :) \ I(mask, j, 2);
+        gB(:,j) = directions(mask, :) \ I(mask, j, 3);
+    end
     G = (gR + gG + gB) / 3;
 
     %% Normalize to get rho and normals
@@ -46,7 +69,7 @@ function [N, rho] = myPMS(data, m)
     rho(:, :, 1) = reshape(rho_reshaped(:, 1), H, W);
     rho(:, :, 2) = reshape(rho_reshaped(:, 2), H, W);
     rho(:, :, 3) = reshape(rho_reshaped(:, 3), H, W);
-
+    
     N = zeros(H, W, 3);
     N_reshaped = zeros(H * W, 3);
     N_reshaped(m, :) = N_pixels';

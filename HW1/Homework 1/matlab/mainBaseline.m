@@ -34,11 +34,24 @@ for testId = 1 : 4
     p = length(m);
 
     %% Standard photometric stereo
-    Normal = myPMS(data, m);
+    [normal, rho] = myPMS_robust(data, m);
+    
+    t = datetime('now','Format','yyyy-MM-dd HH:mm:ss');
+    fprintf('[%s] Iteration %d completed\n', string(t), testId);
 
     %% Save results "png"
-    imwrite(uint8((Normal+1)*128).*uint8(mask3), strcat(dataName, '_Normal.png'));
+    imwrite(uint8((normal + 1) * 128) .* uint8(mask3), strcat(dataName, '_Normal.png'));
+    imwrite(uint8(rho * 255) .* uint8(mask3), strcat(dataName, '_rho.png'));
+
+    direction = data.s(1, :);
+    intensity = data.L(1, :);
+    direction = reshape(direction, [1 size(direction)]);
+    intensity = reshape(intensity, [1 size(intensity)]);
+    reflectance = rho .* sum(normal .* direction, 3);
+    reflectance = reshape(reflectance, [size(reflectance) 1]);
+    rendered = intensity .* reflectance;
+    imwrite(uint8(rendered * 255) .* uint8(mask3), strcat(dataName, '_rendered.png'));
 
     %% Save results "mat"
-    save(strcat(dataName, '_Normal.mat'), 'Normal');
+    % save(strcat(dataName, '_Normal.mat'), 'Normal');
 end
