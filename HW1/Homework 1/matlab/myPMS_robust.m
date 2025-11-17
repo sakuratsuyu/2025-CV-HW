@@ -1,4 +1,4 @@
-function [N, rho] = myPMS(data, m)
+function [N, rho] = myPMS_robust(data, m)
 % myPMS  Perform standard photometric stereo
 % INPUT:
 %   data.s        : nimages x 3 light source directions
@@ -19,8 +19,8 @@ function [N, rho] = myPMS(data, m)
     [H, W] = size(data.mask);
     p = length(m);
 
-    dark_ratio = 0.1;
-    bright_ratio = 0.3;
+    dark_ratio = 0.2;
+    bright_ratio = 0.0;
 
     N = zeros(H, W, 3);
     rho = zeros(H, W, 3);

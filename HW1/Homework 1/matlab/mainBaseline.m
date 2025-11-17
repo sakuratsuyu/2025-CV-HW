@@ -34,7 +34,7 @@ for testId = 1 : 4
     p = length(m);
 
     %% Standard photometric stereo
-    [normal, rho] = myPMS_robust(data, m);
+    [normal, rho] = myPMS_robust_accelerate(data, m);
     
     t = datetime('now','Format','yyyy-MM-dd HH:mm:ss');
     fprintf('[%s] Iteration %d completed\n', string(t), testId);

@@ -1,4 +1,4 @@
-function [N, rho] = myPMS(data, m)
+function [N, rho] = myPMS_robust_accelerate(data, m)
 % myPMS  Perform standard photometric stereo
 % INPUT:
 %   data.s        : nimages x 3 light source directions
@@ -39,11 +39,9 @@ function [N, rho] = myPMS(data, m)
     kcount = high_cut - low_cut + 1;
     W_mask = false(nImages, p);
     rowsToFill = low_cut:high_cut; % length = kcount
-    for r = 1:kcount
-        idx_rows = sorted_idx(rowsToFill(r), :); % 1 × p, image indices to keep for each pixel
-        % linear indexing trick: set W(idx_rows(j), j) = true for all j
-        % We'll compute linear indices:
-        linIdx = idx_rows + (0:(p-1))*nImages; % 1×p vector of linear indices into W(:)
+    for r = 1 : kcount
+        idx_rows = sorted_idx(rowsToFill(r), :);
+        linIdx = idx_rows + (0 : (p - 1)) * nImages;
         W_mask(linIdx) = true;
     end
 
@@ -51,7 +49,7 @@ function [N, rho] = myPMS(data, m)
     gG = zeros(3, p);
     gB = zeros(3, p);
     for j = 1 : p
-        mask = W_mask(:,j) ~= 0;
+        mask = W_mask(:, j) ~= 0;
         gR(:,j) = directions(mask, :) \ I(mask, j, 1);
         gG(:,j) = directions(mask, :) \ I(mask, j, 2);
         gB(:,j) = directions(mask, :) \ I(mask, j, 3);
