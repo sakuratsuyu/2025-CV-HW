@@ -48,44 +48,95 @@ function N = myPMS(data, m)
     % N(:, :, 3) = reshape(N_reshaped(:, 3), H, W);
 
 
-    dark_ratio = 0.1;    % remove lowest 10%
-    bright_ratio = 0.1;  % remove highest 10%
+    % dark_ratio = 0.1;    % remove lowest 10%
+    % bright_ratio = 0.1;  % remove highest 10%
+    % 
+    % N = zeros(H, W, 3);
+    % for k = 1 : p
+    %     idx = m(k);
+    % 
+    %     [y, x] = ind2sub([H, W], idx);
+    % 
+    %     % Collect observations for this pixel
+    %     I = zeros(nImages, 3);
+    %     for i = 1 : nImages
+    %         pixel = double(imgs{i}(y, x, :));
+    %         pixel = reshape(pixel, [1, 3]);
+    %         I(i, :) = pixel ./ intensities(i, :);
+    %     end
+    % 
+    %     % Compute intensity magnitude to do trimming
+    %     I_magnitude = sqrt(sum(I .^ 2, 2));  % per-image magnitude
+    % 
+    %     % Sort intensities
+    %     [~, order] = sort(I_magnitude);
+    % 
+    %     % Compute trimming ranges
+    %     low_cut = ceil(dark_ratio * nImages) + 1;
+    %     high_cut = floor((1 - bright_ratio) * nImages);
+    %     keep_idx = order(low_cut : high_cut);  % indices to keep
+    % 
+    %     I_clean = I(keep_idx, :);
+    %     directions_clean = directions(keep_idx, :);
+    % 
+    %     gR = directions_clean \ I_clean(:, 1);
+    %     gG = directions_clean \ I_clean(:, 2);
+    %     gB = directions_clean \ I_clean(:, 3);
+    %     G = (gR + gG + gB) / 3;
+    %     n = G ./ vecnorm(G, 2, 1);
+    % 
+    %     % Save normal
+    %     N(y, x, :) = n;
+    % end
 
-    N = zeros(H, W, 3);
-    for k = 1 : p
-        idx = m(k);
 
-        [y, x] = ind2sub([H, W], idx);
+    dark_ratio = 0.0;    % remove lowest 10%
+    bright_ratio = 0.0;  % remove highest 10%
 
-        % Collect observations for this pixel
-        I = zeros(nImages, 3);
-        for i = 1 : nImages
-            pixel = double(imgs{i}(y, x, :));
-            pixel = reshape(pixel, [1, 3]);
-            I(i, :) = pixel ./ intensities(i, :);
-        end
+    I = zeros(nImages, p, 3);
+    for i = 1 : nImages
+        img = double(imgs{i});
+        img = reshape(img, [], 3);
 
-        % Compute intensity magnitude to do trimming
-        I_magnitude = sqrt(sum(I .^ 2, 2));  % per-image magnitude
-
-        % Sort intensities
-        [~, order] = sort(I_magnitude);
-
-        % Compute trimming ranges
-        low_cut = ceil(dark_ratio * nImages) + 1;
-        high_cut = floor((1 - bright_ratio) * nImages);
-        keep_idx = order(low_cut : high_cut);  % indices to keep
-
-        I_clean = I(keep_idx, :);
-        directions_clean = directions(keep_idx, :);
-
-        gR = directions_clean \ I_clean(:, 1);
-        gG = directions_clean \ I_clean(:, 2);
-        gB = directions_clean \ I_clean(:, 3);
-        G = (gR + gG + gB) / 3;
-        n = G ./ vecnorm(G, 2, 1);
-
-        % Save normal
-        N(y, x, :) = n;
+        I(i, :, :) = img(m, :) ./ intensities(i, :);
     end
+
+    I_magnitude = sqrt(squeeze(sum(I .^ 2, 3)));  % n x p
+
+    [~, sorted_idx] = sort(I_magnitude, 1, 'ascend');
+
+    low_cut = ceil(dark_ratio * nImages) + 1;
+    high_cut = floor((1 - bright_ratio) * nImages);
+    kcount = high_cut - low_cut + 1;
+    W_mask = false(nImages, p);
+    rowsToFill = low_cut:high_cut; % length = kcount
+    for r = 1:kcount
+        idx_rows = sorted_idx(rowsToFill(r), :); % 1 × p, image indices to keep for each pixel
+        % linear indexing trick: set W(idx_rows(j), j) = true for all j
+        % We'll compute linear indices:
+        linIdx = idx_rows + (0:(p-1))*nImages; % 1×p vector of linear indices into W(:)
+        W_mask(linIdx) = true;
+    end
+
+    gR = zeros(3, p);
+    gG = zeros(3, p);
+    gB = zeros(3, p);
+    for j = 1 : p
+        mask = W_mask(:,j) ~= 0;
+        gR(:,j) = directions(mask, :) \ I(mask, j, 1);
+        gG(:,j) = directions(mask, :) \ I(mask, j, 1);
+        gB(:,j) = directions(mask, :) \ I(mask, j, 1);
+    end
+    G = (gR + gG + gB) / 3;
+
+    %% Normalize to get only normals
+    N_pixels = G ./ vecnorm(G, 2, 1);
+
+    %% Reshape into H × W × 3 normal map
+    N = zeros(H, W, 3);
+    N_reshaped = zeros(H * W, 3);
+    N_reshaped(m, :) = N_pixels';
+    N(:, :, 1) = reshape(N_reshaped(:, 1), H, W);
+    N(:, :, 2) = reshape(N_reshaped(:, 2), H, W);
+    N(:, :, 3) = reshape(N_reshaped(:, 3), H, W);
 end
