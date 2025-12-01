@@ -12,7 +12,6 @@ function [N, rho] = myPMS(data, m)
 
     %% Extract information
     directions = data.s;            % n x 3 light directions
-    intensities = data.L;           % n x 3 light directions
     imgs = data.imgs;
     nImages = size(directions, 1);
 
@@ -23,8 +22,7 @@ function [N, rho] = myPMS(data, m)
     for i = 1 : nImages
         img = double(imgs{i});
         img = reshape(img, [], 3);
-
-        I(i, :, :) = img(m, :) ./ intensities(i, :);
+        I(i, :, :) = img(m, :);
     end
 
     %% Solve for normals and albedo using least squares

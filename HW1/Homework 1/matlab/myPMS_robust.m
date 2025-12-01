@@ -12,7 +12,6 @@ function [N, rho] = myPMS_robust(data, m)
 
     %% Extract information
     directions = data.s;            % n x 3 light directions
-    intensities = data.L;           % n x 3 light directions
     imgs = data.imgs;
     nImages = size(directions, 1);
 
@@ -20,7 +19,7 @@ function [N, rho] = myPMS_robust(data, m)
     p = length(m);
 
     dark_ratio = 0.2;
-    bright_ratio = 0.0;
+    bright_ratio = 0.2;
 
     N = zeros(H, W, 3);
     rho = zeros(H, W, 3);
@@ -34,7 +33,7 @@ function [N, rho] = myPMS_robust(data, m)
         for i = 1 : nImages
             pixel = double(imgs{i}(y, x, :));
             pixel = reshape(pixel, [1, 3]);
-            I(i, :) = pixel ./ intensities(i, :);
+            I(i, :) = pixel;
         end
 
         % Compute intensity magnitude to do trimming

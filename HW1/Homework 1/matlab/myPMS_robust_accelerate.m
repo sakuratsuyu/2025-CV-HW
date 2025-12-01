@@ -12,7 +12,6 @@ function [N, rho] = myPMS_robust_accelerate(data, m)
 
     %% Extract information
     directions = data.s;            % n x 3 light directions
-    intensities = data.L;           % n x 3 light directions
     imgs = data.imgs;
     nImages = size(directions, 1);
 
@@ -20,14 +19,14 @@ function [N, rho] = myPMS_robust_accelerate(data, m)
     p = length(m);
 
     dark_ratio = 0.2;
-    bright_ratio = 0.0;
+    bright_ratio = 0.2;
 
     I = zeros(nImages, p, 3);
     for i = 1 : nImages
         img = double(imgs{i});
         img = reshape(img, [], 3);
 
-        I(i, :, :) = img(m, :) ./ intensities(i, :);
+        I(i, :, :) = img(m, :);
     end
 
     I_magnitude = sqrt(squeeze(sum(I .^ 2, 3)));  % n x p

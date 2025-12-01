@@ -16,10 +16,10 @@ dataNameStack{4} = 'buddha';
 for testId = 1 : 4
     dataName = [dataNameStack{testId}, dataFormat];
     datadir = ['..\pmsData\', dataName];
-    bitdepth = 16;
+    bitDepth = 16;
     gamma = 1;
     resize = 1;  
-    data = load_datadir_re(datadir, bitdepth, resize, gamma); 
+    data = load_datadir_re(datadir, bitDepth, resize, gamma); 
 
     L = data.s;
     f = size(L, 1);
@@ -34,14 +34,14 @@ for testId = 1 : 4
     p = length(m);
 
     %% Standard photometric stereo
-    [normal, rho] = myPMS_robust_accelerate(data, m);
+    [normal, rho] = myPMS_robust(data, m);
     
     t = datetime('now','Format','yyyy-MM-dd HH:mm:ss');
     fprintf('[%s] Iteration %d completed\n', string(t), testId);
 
     %% Save results "png"
-    imwrite(uint8((normal + 1) * 128) .* uint8(mask3), strcat(dataName, '_Normal.png'));
-    imwrite(uint8(rho * 255) .* uint8(mask3), strcat(dataName, '_rho.png'));
+    imwrite(uint16((normal + 1) * (2 ^ (bitDepth - 1))) .* uint16(mask3), strcat(dataName, '_normal.png'));
+    imwrite(uint16(rho * (2 ^ bitDepth - 1)) .* uint16(mask3), strcat(dataName, '_rho.png'));
 
     direction = data.s(1, :);
     intensity = data.L(1, :);
@@ -50,7 +50,7 @@ for testId = 1 : 4
     reflectance = rho .* sum(normal .* direction, 3);
     reflectance = reshape(reflectance, [size(reflectance) 1]);
     rendered = intensity .* reflectance;
-    imwrite(uint8(rendered * 255) .* uint8(mask3), strcat(dataName, '_rendered.png'));
+    imwrite(uint16(rendered * (2 ^ bitDepth - 1)) .* uint16(mask3), strcat(dataName, '_color.png')); 
 
     %% Save results "mat"
     % save(strcat(dataName, '_Normal.mat'), 'Normal');
