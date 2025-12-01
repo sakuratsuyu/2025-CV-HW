@@ -49,9 +49,9 @@ function [N, rho] = myPMS_robust_accelerate(data, m)
     gB = zeros(3, p);
     for j = 1 : p
         mask = W_mask(:, j) ~= 0;
-        gR(:,j) = directions(mask, :) \ I(mask, j, 1);
-        gG(:,j) = directions(mask, :) \ I(mask, j, 2);
-        gB(:,j) = directions(mask, :) \ I(mask, j, 3);
+        gR(:, j) = directions(mask, :) \ I(mask, j, 1);
+        gG(:, j) = directions(mask, :) \ I(mask, j, 2);
+        gB(:, j) = directions(mask, :) \ I(mask, j, 3);
     end
     G = (gR + gG + gB) / 3;
 
