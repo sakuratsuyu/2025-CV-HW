@@ -1,0 +1,200 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{cite}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{cleveref}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+
+\definecolor{3dgc1}{RGB}{177, 83, 74}
+\definecolor{3dgc2}{RGB}{93, 107, 72}
+
+\title{\textbf{Homework 1: Photometric Stereo}}
+\author{Suiliang Mai,\ 22521175}
+\date{}
+
+
+% 设置页眉样式
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textbf{Computer Vision Homework 1: Photometric Stereo}}
+\fancyhead[R]{\thepage} 
+
+\begin{document}
+
+\maketitle
+
+\section{Problem Setting}
+
+For each object, given 16-bit integer PNG images with resolution of 612x512 from 96 different lighting directions, light directions and light intensities, our goal is to recover the normal map and albedo map of the specific fixed viewpoint.
+
+\section{Method}
+
+The reflectance models is assumed to be the Lambert's model, with the following simplified render equation,
+
+\begin{equation}
+    I_{C} = L \cdot \rho_{C} \cdot \left(\mathbf{n} \cdot \mathbf{l}\right),\ C = \{R, G, B\}
+\end{equation}
+
+\noindent where $L$ is the known light intensity, $\mathbf{l}$ is the known light direction, $\rho_{C}$ is the unknown surface albedo and $\mathbf{n}$ is the unknown normal.
+
+Since we have $N = 96 > 3$ images from different light directions and light intensities, the problem becomes an optimization problem. For each pixel $\mathbf{p}$ in each channel of the $i$-th captured image, we suppose $\mathbf{l}_{i} = (l_{i, 0}, l_{i, 1}, l_{i, 2})$ the light direction, $I_{i}$ the reflectance, $L_{i}$ the light intensity. Typically, photometric stereo utilizes least squares method to minimize
+
+\begin{equation}
+    \lVert A \mathbf{x} - \mathbf{b}\rVert
+\end{equation}
+
+\noindent where
+
+\begin{equation}
+    A_{N \times 3} =
+    \begin{pmatrix}
+        l_{0, 0} & l_{0, 1} & l_{0, 2} \\
+        \vdots & \vdots & \vdots \\
+        l_{N - 1, 0} & l_{N - 1, 1}& l_{N - 1, 2} \\
+    \end{pmatrix}
+\end{equation}
+
+\noindent and
+
+\begin{equation}
+    b_{N \times 1} = \left(\frac{I_{0}}{L_{0}}, \cdots, \frac{I_{N - 1}}{L_{N - 1}}\right)^\top
+\end{equation}
+
+The result is a $3 \times 1$ vector $\mathbf{x}$. Since $x = \rho \cdot \mathbf{n}$, the albedo $\rho$ and normal $\mathbf{n}$ can be calculated by
+
+\begin{equation}
+    \mathbf{n} = \frac{\mathbf{x}}{\lVert \mathbf{x} \rVert},\ \rho = \lVert \mathbf{x} \rVert
+\end{equation}
+
+Actually, there are three channel RGB for each image. Practically, we solve each channel respectively with the results $\mathbf{x}_{R}$, $\mathbf{x}_{G}$ and $\mathbf{x}_{B}$, and then utilizes the following method to aggregate the final result,
+
+\begin{equation}
+    \mathbf{n} = \frac{\mathbf{x}_{R} + \mathbf{x}_{G} + \mathbf{x}_{B}}{\lVert \mathbf{x}_{R} + \mathbf{x}_{G} + \mathbf{x}_{B} \rVert},\ \rho = \left(\lVert \mathbf{x}_{R} \rVert, \lVert \mathbf{x}_{G} \rVert, \lVert \mathbf{x}_{B} \rVert\right)^\top
+\end{equation}
+
+\subsection{Outliner}
+
+Shadows due to geometry visibility and highlights due to complex material model can be observed from the captured images, which are not considered in our simple Lambert's model. In other words, they are the outliners. A simple solution is to discard certain percentage of the darkest and brightest
+pixels to get rid of shadow and highlight respective. We set both the darkest and brightest ratio 0.2 in our experiments.
+
+\section{Experiments}
+
+Our method is tested in four different objects in the real capture scene. The qualitative results are shown in \cref{fig:result} and the quantitative results are shown in \cref{tab:result}. The error maps calculate the differences between the re-render images and the ground-truth images. Large errors mainly appear in the specular part of the objects, which demonstrates close apprximations of our methods.
+
+We further show the difference of albedo recovery for the original version and the robust version that discards the outliers in \cref{fig:comparision}. The results show that our robust version successfully reduce the specular part of the object as expected.
+
+\begin{figure*}[htbp]
+    \setlength{\tabcolsep}{2pt}
+    \centering
+    \begin{tabular}{ccccc}
+        \includegraphics[width=0.19\linewidth]{figs/bearPNG_normal.png} &
+        \includegraphics[width=0.19\linewidth]{figs/bearPNG_albedo.png} &
+        \includegraphics[width=0.19\linewidth]{figs/bearPNG_color.png} &
+        \includegraphics[width=0.19\linewidth]{figs/bearPNG_gt.png} &
+        \includegraphics[width=0.19\linewidth]{figs/bearPNG_error.png} \\
+
+        \includegraphics[width=0.19\linewidth]{figs/buddhaPNG_normal.png} &
+        \includegraphics[width=0.19\linewidth]{figs/buddhaPNG_albedo.png} &
+        \includegraphics[width=0.19\linewidth]{figs/buddhaPNG_color.png} &
+        \includegraphics[width=0.19\linewidth]{figs/buddhaPNG_gt.png} &
+        \includegraphics[width=0.19\linewidth]{figs/buddhaPNG_error.png} \\
+
+        \includegraphics[width=0.19\linewidth]{figs/catPNG_normal.png} &
+        \includegraphics[width=0.19\linewidth]{figs/catPNG_albedo.png} &
+        \includegraphics[width=0.19\linewidth]{figs/catPNG_color.png} &
+        \includegraphics[width=0.19\linewidth]{figs/catPNG_gt.png} &
+        \includegraphics[width=0.19\linewidth]{figs/catPNG_error.png} \\
+
+        \includegraphics[width=0.19\linewidth]{figs/potPNG_normal.png} &
+        \includegraphics[width=0.19\linewidth]{figs/potPNG_albedo.png} &
+        \includegraphics[width=0.19\linewidth]{figs/potPNG_color.png} &
+        \includegraphics[width=0.19\linewidth]{figs/potPNG_gt.png} &
+        \includegraphics[width=0.19\linewidth]{figs/potPNG_error.png} \\
+
+        Normal & Albedo & Prediction & GT & Error
+    \end{tabular}
+    \vspace{-1em}
+    \caption{Qualitative results of photometric stereo. We increase the exposure by $2.0$ in \texttt{bear}, \texttt{buddha} and \texttt{cat} object, increase the exposure by $3.0$ in \texttt{pot} object for better visualization.}
+    \label{fig:result}
+\end{figure*}
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{c|cc}
+        & PSNR & SSIM\\
+        \hline
+        bear & 33.77 & 0.7353 \\
+        buddha & 32.20 & 0.5422 \\
+        cat & 34.73 & 0.7836 \\
+        pot & 43.20 & 0.7770 \\
+    \end{tabular}
+    \caption{Quantitative reesults of photometric stereo. We use PSNR and SSIM as metrics to evaluate the re-rendered results.}
+    \label{tab:result}
+\end{table}
+
+\begin{figure*}[htbp]
+    \setlength{\tabcolsep}{2pt}
+    \centering
+    \begin{tabular}{cc}
+        \includegraphics[width=0.20\linewidth]{figs/buddhaPNG_albedo.png} &
+        \includegraphics[width=0.20\linewidth]{figs/buddhaPNG_albedo_origin.png} \\
+
+        \includegraphics[width=0.20\linewidth]{figs/potPNG_albedo.png} &
+        \includegraphics[width=0.20\linewidth]{figs/potPNG_albedo_origin.png} \\
+
+        Original & Robust
+    \end{tabular}
+    \vspace{-1em}
+    \caption{Comparision of the original version and the robust version. The robust version discards the outliers that are too dark or too bright. We increase the exposure by $2.0$ in \texttt{buddha} object and increase the exposure by $3.0$ in \texttt{pot} object for better visualization.}
+    \label{fig:comparision}
+\end{figure*}
+
+
+\section{Discussion}
+
+\subsection{Acceleration of the Robust Version}
+
+To discard the darkest and brightest part for better robustness, a general idea is to discard for each pixel with a loop. Each time, the loop fetches the images, indexes the pixel, sorts the data, discards the outliers and finally solves the optimization problem by least squares, which drastically slows down the running time from 3 second to 10 second using \texttt{Matlab} in my PC.
+
+To accelerate this process, we can introduce a mask for each pixel to mask out the outliners. The mask is pre-computed before the pixel loop by a general sorting and a filtering by the darkest and brightest ratio. Code details can be found in \texttt{myPMS\_robust.m} and \texttt{myPMS\_robust\_accelerate.m}.
+
+\begin{figure*}[htbp]
+    \setlength{\tabcolsep}{2pt}
+    \centering
+    \begin{tabular}{ccccc}
+        \includegraphics[width=0.19\linewidth]{figs/monkey_normal/normal_gt.png} &
+        \includegraphics[width=0.19\linewidth]{figs/monkey_normal/normal_exr.png} &
+        \includegraphics[width=0.19\linewidth]{figs/monkey_normal/normal_png.png} &
+        \includegraphics[width=0.19\linewidth]{figs/monkey_normal/exr_error.png} &
+        \includegraphics[width=0.19\linewidth]{figs/monkey_normal/png_error.png} \\
+
+        GT & EXR & PNG & EXR Error & PNG Error
+    \end{tabular}
+    \vspace{-1em}
+    \caption{Comparision of the influences of the light directions. \texttt{EXR} means we use the lossless OpenEXR images which store all information including the clipped negative values, while \texttt{PNG} means lossy PNG images are used which are clipped with negative values.}
+    \label{fig:influence}
+\end{figure*}
+
+\subsection{Influence of the Choice of the Light Directions}
+
+On one hand, if we visualize the light directions of the provided data, we can get the following result, which is a uniform distribution in a hemisphere of the positive z-axis.
+
+On the other hand, the normal recovery of the four objects we used shows that the normal is also in the positive z-axis direction. That means we give the normal direction $\mathbf{n}$ is on the same side as light direction $\mathbf{l}$, or mathematically, we have
+
+\begin{equation}
+    0 < \mathbf{n} \cdot \mathbf{l} < 1
+\end{equation}
+
+However, when the light directions are not satisfied with this condition, due to lighting is clipped in the "negative" hemisphere. Finally It causes the shadow effect as well and becomes an outlier.
+
+We validate this consideration in a synthetic scene rendered by \texttt{Blender} and the results are shown in \cref{fig:influence}. Some of the ground-truth normal of the image is in the \texttt{-z} direction. For the EXR images, it stores all information and therefore the recovered normal is almost the same. While the lossy PNG shows poor results where the normal is in the \texttt{-z} direction.
+
+% \bibliographystyle{plain}
+% \bibliography{references}
+
+\end{document}
