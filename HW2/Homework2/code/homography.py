@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from tqdm import tqdm, trange
 import time
+from multiband_blending import create_feather_mask, multiband_blend_manual, multiband_blend_opencv
 
 # ---------- Load images ----------
 
@@ -129,7 +130,7 @@ def ransac_homography(pts1, pts2, max_iter=100, threshold=0.01):
     MEDIAN_ERROR_THRESHOLD = 3.0
     cnt = 0
 
-    for _ in range(max_iter):
+    for _ in trange(max_iter):
         # randomly select 4 points and compute homography
         idx = np.random.choice(n_pts, 4, replace=False)
         H = compute_homography_DLT(pts1[idx], pts2[idx])
@@ -257,6 +258,7 @@ def stitch_two_images(img1, img2, H):
     img1_mask = (cv2.cvtColor(warped_img1, cv2.COLOR_BGR2GRAY) > 0)
     img2_mask = (cv2.cvtColor(canvas_img2, cv2.COLOR_BGR2GRAY) > 0)
     
+    both_mask = np.logical_or(img1_mask, img2_mask)
     overlap_mask = np.logical_and(img1_mask, img2_mask)
     img1_only_mask = np.logical_and(img1_mask, ~img2_mask)
     img2_only_mask = np.logical_and(~img1_mask, img2_mask)
@@ -265,7 +267,15 @@ def stitch_two_images(img1, img2, H):
     canvas[img1_only_mask, :] = warped_img1[img1_only_mask]
     canvas[img2_only_mask, :] = canvas_img2[img2_only_mask]
 
-    return canvas
+    warped_img1_filled = cv2.inpaint(warped_img1, ((1 - img1_mask) * 255).astype(np.uint8), 3, cv2.INPAINT_NS)
+    canvas_img2_filled = cv2.inpaint(canvas_img2, ((1 - img2_mask) * 255).astype(np.uint8), 3, cv2.INPAINT_NS)
+    feather_mask = create_feather_mask(img1_mask, img2_mask)
+    canvas_band = multiband_blend_manual(warped_img1_filled, canvas_img2_filled, feather_mask)
+    canvas_band[~both_mask] = 0.0
+    canvas_band[img1_only_mask, :] = warped_img1[img1_only_mask]
+    canvas_band[img2_only_mask, :] = canvas_img2[img2_only_mask]
+
+    return canvas_band
 
 
 # ---------- Main ----------
