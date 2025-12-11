@@ -349,27 +349,29 @@ def stitch_tree(tree):
 
 if __name__ == "__main__":
 
-    # names = [
-    #     [
-    #         [
-    #             "../data/data1/112_1300.JPG",
-    #             "../data/data1/113_1301.JPG",
-    #         ],
-    #         [
-    #             "../data/data1/112_1298.JPG",
-    #             "../data/data1/112_1299.JPG",
-    #         ],
-    #     ],
-    #     [
-    #         "../data/data1/113_1302.JPG",
-    #         "../data/data1/113_1303.JPG",
-    #     ]
-    # ]
+    np.random.seed(42)
+
+    names = [
+        # [
+        #     [
+                "../data/data1/112_1300.JPG",
+                "../data/data1/113_1301.JPG",
+        #     ],
+        #     [
+        #         "../data/data1/112_1298.JPG",
+        #         "../data/data1/112_1299.JPG",
+        #     ],
+        # ],
+        # [
+        #     "../data/data1/113_1302.JPG",
+        #     "../data/data1/113_1303.JPG",
+        # ]
+    ]
     
     # names = [
     #     [
-    #         "../data/data2/IMG_0490.JPG",
     #         "../data/data2/IMG_0491.JPG",
+    #         "../data/data2/IMG_0490.JPG",
     #     ],
     #     [
     #         "../data/data2/IMG_0488.JPG",
@@ -377,24 +379,24 @@ if __name__ == "__main__":
     #     ],
     # ]
 
-    names = [
-        "../data/data3/IMG_0677.JPG",
-        [
-            "../data/data3/IMG_0675.JPG",
-            "../data/data3/IMG_0676.JPG",
-        ],
-    ]
+    # names = [
+    #     "../data/data3/IMG_0677.JPG",
+    #     [
+    #         "../data/data3/IMG_0675.JPG",
+    #         "../data/data3/IMG_0676.JPG",
+    #     ],
+    # ]
 
-    names = [
-        [
-            "../data/data4/IMG_7357.JPG",
-            "../data/data4/IMG_7358.JPG",
-        ],
-         [
-            "../data/data4/IMG_7355.JPG",
-            "../data/data4/IMG_7356.JPG",
-        ],
-    ]
+    # names = [
+    #     [
+    #         "../data/data4/IMG_7358.JPG",
+    #         "../data/data4/IMG_7357.JPG",
+    #     ],
+    #     [
+    #         "../data/data4/IMG_7355.JPG",
+    #         "../data/data4/IMG_7356.JPG",
+    #     ],
+    # ]
 
     imgs = load_imgs_tree(names)
     result = stitch_tree(imgs)
