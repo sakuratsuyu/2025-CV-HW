@@ -249,7 +249,6 @@ def stitch_two_images(img1, img2, H):
 
     warped_img1 = cv2.warpPerspective(img1, H_translate @ H, (width, height), flags=cv2.INTER_NEAREST)
 
-    canvas = np.zeros((height, width, 3), dtype=np.uint8)
 
     canvas_img2 = np.zeros((height, width, 3), dtype=np.uint8)
     canvas_img2[translation[1]: translation[1] + h2,
@@ -263,13 +262,17 @@ def stitch_two_images(img1, img2, H):
     img1_only_mask = np.logical_and(img1_mask, ~img2_mask)
     img2_only_mask = np.logical_and(~img1_mask, img2_mask)
 
-    canvas[overlap_mask, :] = warped_img1[overlap_mask, :] * 0.5 + canvas_img2[overlap_mask, :] * (1 - 0.5)
-    canvas[img1_only_mask, :] = warped_img1[img1_only_mask]
-    canvas[img2_only_mask, :] = canvas_img2[img2_only_mask]
+    canvas_linear = np.zeros((height, width, 3), dtype=np.uint8)
+    canvas_linear[overlap_mask, :] = warped_img1[overlap_mask, :] * 0.5 + canvas_img2[overlap_mask, :] * (1 - 0.5)
+    canvas_linear[img1_only_mask, :] = warped_img1[img1_only_mask]
+    canvas_linear[img2_only_mask, :] = canvas_img2[img2_only_mask]
 
+    feather_mask = create_feather_mask(img1_mask, img2_mask)
+    canvas_gradient = warped_img1 * feather_mask[:, :, None] + canvas_img2 * (1 - feather_mask[:, :, None])
+
+    feather_mask = create_feather_mask(img1_mask, img2_mask)
     warped_img1_filled = cv2.inpaint(warped_img1, ((1 - img1_mask) * 255).astype(np.uint8), 3, cv2.INPAINT_NS)
     canvas_img2_filled = cv2.inpaint(canvas_img2, ((1 - img2_mask) * 255).astype(np.uint8), 3, cv2.INPAINT_NS)
-    feather_mask = create_feather_mask(img1_mask, img2_mask)
     canvas_band = multiband_blend_manual(warped_img1_filled, canvas_img2_filled, feather_mask)
     canvas_band[~both_mask] = 0.0
     canvas_band[img1_only_mask, :] = warped_img1[img1_only_mask]
@@ -351,33 +354,33 @@ if __name__ == "__main__":
 
     np.random.seed(42)
 
-    names = [
-        # [
-        #     [
-                "../data/data1/112_1300.JPG",
-                "../data/data1/113_1301.JPG",
-        #     ],
-        #     [
-        #         "../data/data1/112_1298.JPG",
-        #         "../data/data1/112_1299.JPG",
-        #     ],
-        # ],
-        # [
-        #     "../data/data1/113_1302.JPG",
-        #     "../data/data1/113_1303.JPG",
-        # ]
-    ]
-    
     # names = [
     #     [
-    #         "../data/data2/IMG_0491.JPG",
-    #         "../data/data2/IMG_0490.JPG",
+    #         [
+    #             "../data/data1/112_1300.JPG",
+    #             "../data/data1/113_1301.JPG",
+    #         ],
+    #         [
+    #             "../data/data1/112_1298.JPG",
+    #             "../data/data1/112_1299.JPG",
+    #         ],
     #     ],
     #     [
-    #         "../data/data2/IMG_0488.JPG",
-    #         "../data/data2/IMG_0489.JPG",
-    #     ],
+    #         "../data/data1/113_1302.JPG",
+    #         "../data/data1/113_1303.JPG",
+    #     ]
     # ]
+    
+    names = [
+        [
+            "../data/data2/IMG_0491.JPG",
+            "../data/data2/IMG_0490.JPG",
+        ],
+        [
+            "../data/data2/IMG_0488.JPG",
+            "../data/data2/IMG_0489.JPG",
+        ],
+    ]
 
     # names = [
     #     "../data/data3/IMG_0677.JPG",
