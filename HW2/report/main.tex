@@ -1,0 +1,270 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{cite}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{cleveref}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+
+\title{\textbf{Homework 2: Panorama Stitching}}
+\author{Suiliang Mai,\ 22521175}
+\date{}
+
+
+% 设置页眉样式
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textbf{Computer Vision Homework 2: Panorama Stitching}}
+\fancyhead[R]{\thepage} 
+
+\begin{document}
+
+\maketitle
+
+\section{Problem Setting}
+
+For each scene, given two (or multiple) images that captured by a fixed-center camera, our goal is to calculate the homography between these images and generate image mosaics according to these estimated homographies.
+
+\section{Method}
+
+\subsection{Feature Detection, Descriptor, and Matching}
+
+Before computing homography, feature detection and description must be done by detector and descriptor. Here we utilizes SIFT as the feature detector, and utilizes both SIFT and local-window feature concatenation as the feature descriptor. In particular, the feature detector returns a bunch of keypoints and the feature descriptor returns features that describe the keypoints. We formulate it by
+
+\begin{equation}
+\begin{aligned}
+    \text{kps} &= \texttt{DETECTOR}(I) \\
+    \text{descs} &= \texttt{DESCRIPTOR}(\text{kps}, I) \\
+\end{aligned}
+\end{equation}
+
+\noindent where $I \in \mathbb{R}^{H \times W \times 3}$ is the input image.
+
+After obtaining keypoints and their corresponding features of two images, we match the keypoints of the two images by the features. In order to avoid ambiguous matches, the ratio between the distance to the closest neighbor and the distance to the second closest neighbor as mentioned in the class should be adopted. We formulate it by
+
+\begin{equation}
+    \text{ratio\ distance} = \frac{\lVert f_1 - f_2 \rVert}{\lVert f_1 - f_2' \rVert}
+\end{equation}
+
+\noindent where $f_1$ is the feature of a keypoint in one image, $f_2$ and $f_2'$ are the features of the best and second best matching keypoints in the other image. We consider $f_1$ and $f_2$ are mathcing point when
+
+\begin{equation}
+    \text{ratio\ distance} < \texttt{RATIO}
+\end{equation}
+
+\begin{figure*}[htbp]
+    \setlength{\tabcolsep}{2pt}
+    \centering
+    \includegraphics[width=0.80\linewidth]{figs/matches.jpg}
+    \vspace{-0.5em}
+    \caption{Visualization of matching keypoints of two images in the scene \texttt{data2}.}
+    \label{fig:match}
+\end{figure*}
+
+\subsection{Homography}
+
+Suppose we have matched $N$ keypoints of the two given images, homography is aimed at figuring out the transform matrix $H$ that wraps one image into the other.
+
+RANSAC and DLT algorithms are applied to obtain the largest set of inliers of the given $N$ matching keypoints. Specifically, we iterates $M$ times and each time we randomly choose 4 pairs of matching keypoints $(x_i, y_i)$ and $(u_i, v_i)$ and use them to calculate the homography by direct linear transformation (DLT). We formulate it by
+
+\begin{equation}
+    \begin{pmatrix}
+        -x_1 & -y_1 & 1 & 0 & 0 & 0 & u_1 x_1 & u_1 y_1 & u_1 \\
+        0 & 0 & 1 & -x_1 & -y_1 & 0 & v_1 x_1 & v_1 y_1 & v_1 \\
+
+        & & & & \cdots \\
+
+        -x_4 & -y_4 & 1 & 0 & 0 & 0 & u_4 x_4 & u_4 y_4 & u_4 \\
+        0 & 0 & 1 & -x_4 & -y_4 & 0 & v_4 x_4 & v_4 y_4 & v_4 \\
+    \end{pmatrix}
+    \cdot
+    \begin{pmatrix}
+        h_{00} \\ h_{01} \\ h_{02} \\
+        h_{10} \\ h_{11} \\ h_{12} \\
+        h_{20} \\ h_{21} \\ h_{22}
+    \end{pmatrix}
+    =
+    \mathbf{0}
+\end{equation}
+
+\noindent SVD decomposition is leveraged to solve this equation. After obtaining the homography matrix $H$, we apply this transformation to the matching keypoints and count the number of inliers which fit the model well. After iterating $M$ times, we choose the solution of homography that provides the maximum inlier number. Moreover, M-estimator is used to rectify the homography to get better fitness.
+
+\subsection{Image Stitching}
+
+When obtaining the best estimation of the homography matrix $H$, wrapping can be simply computed by multiplying it. To get better quality of the image stitching, we test both linear and multi-band blending techniques to address the overlap part. Specifically, for linear blending, we simply set the blending weight to be both $w = 0.5$.
+
+\begin{equation}
+    I = w \cdot I_1 + (1 - w) \cdot I_2,\ w = 0.5
+\end{equation}
+
+For multi-band blending techniques, we first compute a gradient mask $M$ along x-axis as in \cref{fig:gradient-mask} and we further using gaussian blur to make the edge smoother as \cref{fig:blur-mask}.
+
+\begin{figure*}[htbp]
+    \setlength{\tabcolsep}{2pt}
+    \centering
+    \begin{tabular}{cc}
+    \includegraphics[width=0.40\linewidth]{figs/mask.jpg} &
+    \includegraphics[width=0.40\linewidth]{figs/mask-blur.jpg} \\
+    Gradient Mask & Blurred Gradient Mask
+    \end{tabular}
+    \caption{Visualization of matching keypoints of two images in the scene \texttt{data2}.}
+    \label{fig:mask}
+\end{figure*}
+
+With the blending weight mask $M$ and two images $I_1$, $I_2$ to blend, we formulate multi-band blending as following steps and get the final blending result $I^\text{BLEND}$.
+
+\begin{enumerate}
+    \item Build Gaussian pyramid
+        \begin{equation}
+        \begin{aligned}
+            G^I_0 &= I,\ I \in \{M, I_1, I_2\} \\
+            G^I_{i + 1} &= \texttt{DOWNSAMPLE}(G_\sigma * G^I_i),\ i = 0, 1, \dots, K - 1 \\
+        \end{aligned}
+        \end{equation}
+    \item Build Laplacian pyramid
+        \begin{equation}
+        \begin{aligned}
+            L^I_{i} &= G^I_i - \texttt{UPSAMPLE}(G^i_{i + 1}),\ i = 0, 1, \dots, K - 1 \\
+            L^I_K &= G^I_K \\
+        \end{aligned}
+        \end{equation}
+    \item Blending at each band
+        \begin{equation}
+        \begin{aligned}
+            L^\text{BLEND}_i &= G^M_i \odot L^{I_1}_i + (1 - G^M_i) \odot L^{I_1}_i,\ i = 0, 1, \dots, K
+        \end{aligned}
+        \end{equation}
+    \item Reconstruction
+        \begin{equation}
+        \begin{aligned}
+            B_K &= L^\text{BLEND}_K \\
+            B_i &= L^\text{BLEND} + \texttt{UPSAMPLE}(B_{i + 1}),\ i = K, K - 1, \dots, 0 \\
+            I^\text{BLEND} &= B_0
+        \end{aligned}
+        \end{equation}
+\end{enumerate}
+
+
+\begin{figure*}[htbp]
+    \setlength{\tabcolsep}{2pt}
+    \centering
+    \begin{tabular}{cc}
+        \includegraphics[width=0.40\linewidth]{../Homework2/code/results/canvas-data1-multiband.jpg} &
+        \includegraphics[width=0.40\linewidth]{../Homework2/code/results/canvas-data4-multiband.jpg} \\
+        \includegraphics[width=0.40\linewidth]{../Homework2/code/results/canvas-data2-multiband.jpg} &
+        \includegraphics[width=0.40\linewidth]{../Homework2/code/results/canvas-data3-multiband.jpg}
+    \end{tabular}
+    \vspace{-0.1em}
+    \caption{Qualitative results of four scenes using all provided images with SIFT descriptors and multi-band blending algorithm.}
+    \label{fig:result}
+\end{figure*}
+
+\section{Experiments}
+
+Our method is tested in four different real captured scenes. The qualitative results are shown in \cref{fig:result}. We further compare the difference of blending methods of simple linear blending and multi-band blending, which are shown in \cref{fig:comparison-blending}. Multi-band blending gives more smoother blending results without obvious seams.
+
+Moreover, to prove the quality improvement provided by SIFT descriptor, we compare the qualitative results of SIFT and simple concatenation of pixels in a local window (the size of the window is $W = 11$ in practice), which are shown in \cref{fig:comparison-descriptor}. To be clear, we use the same detector provided by the SIFT algorithm to obtain the keypoints, but use different descriptors to obtain the features. The result shows that SIFT descriptors make the matching process more accurately and thus result in better homography. Specifically, we test $N = 100$ times using RANSAC and judge the `correct' approximation of homography by the following criterion,
+
+\begin{equation}
+    \#\text{inlier} > \texttt{THRESHOLD}\ \text{and}\ \text{median error} < \texttt{ERROR\_THRESHOLD}
+\end{equation}
+
+\noindent where we practically set $\texttt{THRESHOLD} = 20$ and $\texttt{ERROR\_THRESHOLD} = 3$. We show the ratio of correctness in \cref{table:comparison-descriptor}
+
+
+\begin{figure*}[htbp]
+    \setlength{\tabcolsep}{2pt}
+    \centering
+    \begin{tabular}{cc}
+        \includegraphics[height=3.5cm]{../Homework2/code/comparison-blending/comparison-data1-linear.jpg} &
+        \includegraphics[height=3.5cm]{../Homework2/code/comparison-blending/comparison-data1-multiband.jpg} \\
+        \includegraphics[height=4cm]{../Homework2/code/comparison-blending/comparison-data2-linear.jpg} &
+        \includegraphics[height=4cm]{../Homework2/code/comparison-blending/comparison-data2-multiband.jpg} \\
+        \includegraphics[height=4cm]{../Homework2/code/comparison-blending/comparison-data3-linear.jpg} &
+        \includegraphics[height=4cm]{../Homework2/code/comparison-blending/comparison-data3-multiband.jpg} \\
+        \includegraphics[height=4cm]{../Homework2/code/comparison-blending/comparison-data4-linear.jpg} &
+        \includegraphics[height=4cm]{../Homework2/code/comparison-blending/comparison-data4-multiband.jpg} \\
+
+        Linear Blending & Multi-band Blending
+    \end{tabular}
+    \caption{Comparisons of four scenes using two images with linear blending and multi-band blending algorithm respectively.}
+    \label{fig:comparison-blending}
+\end{figure*}
+
+
+\begin{figure*}[htbp]
+    \setlength{\tabcolsep}{2pt}
+    \centering
+    \begin{tabular}{cc}
+        \includegraphics[height=3.5cm]{../Homework2/code/comparison-descriptor/comparison-data1-concat.jpg} &
+        \includegraphics[height=3.5cm]{../Homework2/code/comparison-descriptor/comparison-data1-SIFT.jpg} \\
+        \includegraphics[height=4cm]{../Homework2/code/comparison-descriptor/comparison-data2-concat.jpg} &
+        \includegraphics[height=4cm]{../Homework2/code/comparison-descriptor/comparison-data2-SIFT.jpg} \\
+        \includegraphics[height=4cm]{../Homework2/code/comparison-descriptor/comparison-data3-concat.jpg} &
+        \includegraphics[height=4cm]{../Homework2/code/comparison-descriptor/comparison-data3-SIFT.jpg} \\
+        \includegraphics[height=4cm]{../Homework2/code/comparison-descriptor/comparison-data4-concat.jpg} &
+        \includegraphics[height=4cm]{../Homework2/code/comparison-descriptor/comparison-data4-SIFT.jpg} \\
+
+        Concatenation Descriptor & SIFT Descriptor
+    \end{tabular}
+    \caption{Comparisons of four scenes using two images with concatenation descriptors and SIFT descriptors respectively. Note that we use the same SIFT detector for keypoints. To make the differences more clearly, we use linear blending with constant weight $w = 0.5$ instead of multi-band blending.}
+    \label{fig:comparison-descriptor}
+\end{figure*}
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{l|cc}
+        & concatenation & SIFT\\
+        \hline
+        data1(\texttt{112\_1300}, \texttt{112\_1301}) & 46 & 87 \\
+        data2(\texttt{IMG\_488}, \texttt{IMG\_489}) & 63 & 78 \\
+        data3(\texttt{IMG\_675}, \texttt{IMG\_676}) & 61 & 69 \\
+        data4(\texttt{IMG\_7358}, \texttt{IMG\_7357}) & 48 & 76 \\
+    \end{tabular}
+    \caption{Quantitative results of different descriptors in four given scenes. We test 100 times using RANSAC and count correctness. SIFT is better than the concatenation algorithm.}
+    \label{tab:result}
+\end{table}
+
+\newpage
+
+\section{Discussion}
+
+\subsection{Order of Image Stitching}
+
+When stitching more than 2 images, we need to compose the images pairwise. However, errors due to the estimation of homography and distortions due to multiple applications of transform matrices fail stitching in the order of view movement. A probably better approach is building a binary tree-like structure and let the original images be the leaf node, and then stitching pairwise from bottom to top. Therefore we can control the order of the stitching.
+
+
+\begin{figure*}[htbp]
+    \setlength{\tabcolsep}{2pt}
+    \centering
+    \includegraphics[width=0.40\linewidth]{figs/list2tree.png}
+    \vspace{-0.5em}
+    \caption{Sketch of the order of image stitching.}
+    \label{fig:ns}
+\end{figure*}
+
+
+\subsection{Multi-band Blending}
+
+Several troubleshooting is done in order to successfully generate smooth image blending results during the developing process. First of all, a smooth mask is needed as a guidance for blending weights. The basic linear mask is actually a mask with sharp seams, which results in bad blending. Moreover, since the wrapped images are filled with black background where there is no pixel. If we directly pass this image into the multi-band blending algorithm, it will generate more obvious seams. This issue is caused by the reason that the Gaussian blur is affected by the black background pixels. To eliminate this influence, the wrapped images need to fill the black pixels with Navier-Stokes inpainting before compute the Gaussian blur.
+
+
+\begin{figure*}[htbp]
+    \setlength{\tabcolsep}{2pt}
+    \centering
+    \begin{tabular}{cc}
+    \includegraphics[width=0.40\linewidth]{figs/img1-warp.jpg} &
+    \includegraphics[width=0.40\linewidth]{figs/img1-inpaint.jpg} \\
+    Wrapped Image & Inpainted Image
+    \end{tabular}
+    \vspace{-0.5em}
+    \caption{Example of wrapped image and inpainted image in the scene \texttt{data2}.}
+    \label{fig:ns}
+\end{figure*}
+
+
+\end{document}
