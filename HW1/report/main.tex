@@ -77,14 +77,14 @@ Actually, there are three channel RGB for each image. Practically, we solve each
     \mathbf{n} = \frac{\mathbf{x}_{R} + \mathbf{x}_{G} + \mathbf{x}_{B}}{\lVert \mathbf{x}_{R} + \mathbf{x}_{G} + \mathbf{x}_{B} \rVert},\ \rho = \left(\lVert \mathbf{x}_{R} \rVert, \lVert \mathbf{x}_{G} \rVert, \lVert \mathbf{x}_{B} \rVert\right)^\top
 \end{equation}
 
-\subsection{Outliner}
+\subsection{outlier}
 
-Shadows due to geometry visibility and highlights due to complex material model can be observed from the captured images, which are not considered in our simple Lambert's model. In other words, they are the outliners. A simple solution is to discard certain percentage of the darkest and brightest
+Shadows due to geometry visibility and highlights due to complex material model can be observed from the captured images, which are not considered in our simple Lambert's model. In other words, they are the outliers. A simple solution is to discard certain percentage of the darkest and brightest
 pixels to get rid of shadow and highlight respective. We set both the darkest and brightest ratio 0.2 in our experiments.
 
 \section{Experiments}
 
-Our method is tested in four different objects in the real capture scene. The qualitative results are shown in \cref{fig:result} and the quantitative results are shown in \cref{tab:result}. The error maps calculate the differences between the re-render images and the ground-truth images. Large errors mainly appear in the specular part of the objects, which demonstrates close apprximations of our methods.
+Our method is tested in four different objects in the real capture scene. The qualitative results are shown in \cref{fig:result} and the quantitative results are shown in \cref{tab:result}. The error maps calculate the differences between the re-render images and the ground-truth images. Large errors mainly appear in the specular part of the objects, which demonstrates close approximations of our methods.
 
 We further show the difference of albedo recovery for the original version and the robust version that discards the outliers in \cref{fig:comparision}. The results show that our robust version successfully reduce the specular part of the object as expected.
 
@@ -133,7 +133,7 @@ We further show the difference of albedo recovery for the original version and t
         cat & 34.73 & 0.7836 \\
         pot & 43.20 & 0.7770 \\
     \end{tabular}
-    \caption{Quantitative reesults of photometric stereo. We use PSNR and SSIM as metrics to evaluate the re-rendered results.}
+    \caption{Quantitative results of photometric stereo. We use PSNR and SSIM as metrics to evaluate the re-rendered results.}
     \label{tab:result}
 \end{table}
 
@@ -161,7 +161,7 @@ We further show the difference of albedo recovery for the original version and t
 
 To discard the darkest and brightest part for better robustness, a general idea is to discard for each pixel with a loop. Each time, the loop fetches the images, indexes the pixel, sorts the data, discards the outliers and finally solves the optimization problem by least squares, which drastically slows down the running time from 3 second to 10 second using \texttt{Matlab} in my PC.
 
-To accelerate this process, we can introduce a mask for each pixel to mask out the outliners. The mask is pre-computed before the pixel loop by a general sorting and a filtering by the darkest and brightest ratio. Code details can be found in \texttt{myPMS\_robust.m} and \texttt{myPMS\_robust\_accelerate.m}.
+To accelerate this process, we can introduce a mask for each pixel to mask out the outliers. The mask is pre-computed before the pixel loop by a general sorting and a filtering by the darkest and brightest ratio. Code details can be found in \texttt{myPMS\_robust.m} and \texttt{myPMS\_robust\_accelerate.m}.
 
 \begin{figure*}[htbp]
     \setlength{\tabcolsep}{2pt}
@@ -176,7 +176,7 @@ To accelerate this process, we can introduce a mask for each pixel to mask out t
         GT & EXR & PNG & EXR Error & PNG Error
     \end{tabular}
     \vspace{-1em}
-    \caption{Comparision of the influences of the light directions. \texttt{EXR} means we use the lossless OpenEXR images which store all information including the clipped negative values, while \texttt{PNG} means lossy PNG images are used which are clipped with negative values.}
+    \caption{Comparisons of the influences of the light directions. \texttt{EXR} means we use the lossless OpenEXR images which store all information including the clipped negative values, while \texttt{PNG} means lossy PNG images are used which are clipped with negative values.}
     \label{fig:influence}
 \end{figure*}
 
