@@ -1,0 +1,159 @@
+% Computer Vision Final Project Template
+% based on CVPR 2022 template, which is further based on CVPR template provided by Ming-Ming Cheng (https://github.com/MCG-NKU/CVPR_Template)
+% modified and extended by Stefan Roth (stefan.roth@NOSPAMtu-darmstadt.de)
+
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+%%%%%%%%% PAPER TYPE  - PLEASE UPDATE FOR FINAL VERSION
+\usepackage{cvpr}              % To produce the CAMERA-READY version
+
+% Include other packages here, before hyperref.
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+
+
+% It is strongly recommended to use hyperref, especially for the review version.
+% hyperref with option pagebackref eases the reviewers' job.
+% Please disable hyperref *only* if you encounter grave issues, e.g. with the
+% file validation for the camera-ready version.
+%
+% If you comment hyperref and then uncomment it, you should delete
+% ReviewTempalte.aux before re-running LaTeX.
+% (Or just hit 'q' on the first LaTeX run, let it finish, and you
+%  should be clear).
+\usepackage[pagebackref,breaklinks,colorlinks]{hyperref}
+
+
+% Support for easy cross-referencing
+\usepackage[capitalize]{cleveref}
+\crefname{section}{Sec.}{Secs.}
+\Crefname{section}{Section}{Sections}
+\Crefname{table}{Table}{Tables}
+\crefname{table}{Tab.}{Tabs.}
+
+
+%%%%%%%%% PAPER ID  - PLEASE UPDATE
+\def\cvprPaperID{*****} % *** Enter the CVPR Paper ID here
+\def\confName{CVPR}
+\def\confYear{2022}
+
+
+\begin{document}
+
+%%%%%%%%% TITLE - PLEASE UPDATE
+\title{Title}
+
+\author{First Student\\
+    Student ID\\
+    Department and Major\\
+    {\tt\small email}
+\and
+    Second Student\\
+	Student ID\\
+	Department and Major\\
+	{\tt\small email}
+\and
+    Third Student\\
+	Student ID\\
+	Department and Major\\
+	{\tt\small email}
+}
+\maketitle
+
+%%%%%%%%% ABSTRACT
+\begin{abstract}
+  150-300 words, research background, motivation, contribution, and conclusion. 
+  
+  {\color{red} Note:
+  There are at most three students in a group. The scores are deducted by 10\% and 20\% for the second and third students respectively by default. You can also discuss on the deduction percentages by yourselves, while the total deduction should not be smaller than the default one (i.e., 30\%).}
+\end{abstract}
+
+%%%%%%%%% BODY TEXT
+\section{Introduction}
+\label{sec:intro}
+
+In the introduction, you should first briefly introduce the research background and value about your project, and then you can discuss the problems of existing methods. Furthermore, you should propose the key idea and contribution of your work. At last, you should report the result and comparison with other works if possible.
+
+In the report, you should follow the writing style of a research paper, including paper organization, logical wording and so on. Finally, the report should be compiled to a PDF file and submitted via ``Learning in ZJU''. The report should be limited to 8 pages, while not shorter than 6 pages. Additional pages containing cited references and appendix are allowed. 
+
+
+%-------------------------------------------------------------------------
+\section{Related Work}
+\label{sec:related_work}
+In this section, you should introduce the related existing works about the research project.
+
+You can cite the papers like ``Alpher \etal~\cite{Alpher03} proposed ...".
+
+\section{Method (You can rename the section title by yourself)}
+\label{sec:method}
+In this section, you should introduce your method including the key idea, pipeline, theory, derivation, algorithm, and so on.
+
+\subsection{Title of subsection 1}
+You can describe your method with separate subsections. 
+
+
+\subsection{Title of subsection 2}
+
+Please number all of displayed equations as in these examples:
+\begin{equation}
+  E = m\cdot c^2
+  \label{eq:important}
+\end{equation}
+and
+\begin{equation}
+  v = a\cdot t.
+  \label{eq:also-important}
+\end{equation}
+It is important for readers to be able to refer to any particular equation.
+Just because you did not refer to it in the text does not mean some future reader might not need to refer to it.
+It is cumbersome to have to use circumlocutions like ``the equation second from the top of page 3 column 1''. You can refer to the equation as ``Equation~\ref{eq:important}...''
+
+Figure~\ref{fig:onecol} is an example of how to include figures.
+
+\begin{figure}[t]
+  \centering
+  \fbox{\rule{0pt}{1.3in} \rule{0.9\linewidth}{0pt}}
+   %\includegraphics[width=0.8\linewidth]{egfigure.eps}
+
+   \caption{Example of figures. You can use "includegraphics" to include image files.}
+   \label{fig:onecol}
+\end{figure}
+
+
+\section{Experiment}
+\label{sec:exp}
+
+The experiment section can be also divided into multiple subsections. You should first report your experiment setup and evaluation metrics. Then you should report the performance of your method on different datasets or with different parameters. The comparison with other methods is also expected. For better understanding, the qualitative results should be also given and analyzed. 
+
+
+An example of including tables is as the following:
+
+\begin{table}
+  \centering
+  \begin{tabular}{@{}lc@{}}
+    \toprule
+    Method & Frobnability \\
+    \midrule
+    Theirs & Frumpy \\
+    Yours & Frobbly \\
+    Ours & Makes one's heart Frob\\
+    \bottomrule
+  \end{tabular}
+  \caption{Results.   Ours is better.}
+  \label{tab:example}
+\end{table}
+
+
+\section{Conclusion}
+\label{sec:conclusion}
+In this section, you should conclude the report by summarizing your work and possible further improvement. 
+
+%%%%%%%%% REFERENCES
+{\small
+\bibliographystyle{ieee_fullname}
+\bibliography{egbib}
+}
+
+\end{document}
